@@ -3,17 +3,21 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
+use ieee.std_logic_unsigned.all;
 entity datapath is
 port (
 -- Entradas de dados
 SW: in std_logic_vector(17 downto 0);
-CLOCK_50: in std_logic; --NA PLACA
---CLOCK_50, CLK_1Hz: in std_logic; --NO EMULADOR
+
+--CLOCK_50: in std_logic; --NA PLACA
+CLOCK_50, CLK_1Hz: in std_logic; --NO EMULADOR
+
 -- Sinais de controle
 R1, E1, E2, E3, E4, E5, E6: in std_logic;
+
 -- Sinais de status
 end_game, end_time, end_round: out std_logic;
+
 -- Saidas de dados
 HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, HEX6, HEX7: out std_logic_vector(6 downto 0);
 LEDR: out std_logic_vector(17 downto 0)
@@ -21,31 +25,40 @@ LEDR: out std_logic_vector(17 downto 0)
 end datapath;
 
 architecture arc of datapath is
+
 --============================================================--
 --                      COMPONENTS                            --
 --============================================================--
+
 -------------------DIVISOR DE FREQUENCIA------------------------
 
-component Div_Freq is
-	port (	    clk: in std_logic;
-				reset: in std_logic;
-				CLK_1Hz: out std_logic
-			);
+--component Div_Freq is
+--port (    clk: in std_logic;
+--reset: in std_logic;
+--CLK_1Hz: out std_logic
+--);
+--end component;
+
+component Div_Freq_emu is
+port (    clk: in std_logic;
+          reset: in std_logic;
+          CLK_1Hz, sim_2hz: out std_logic
+);
 end component;
 
 ------------------------CONTADORES------------------------------
 
-component counter is port( 
+component contador is port(
          R: in std_logic;
          clock: in std_logic;
          E: in std_logic;
-			count: out std_logic_vector(3 downto 0);
-			flag: out std_logic);
+count: out std_logic_vector(3 downto 0);
+flag: out std_logic);
 end component;
 
 -------------------ELEMENTOS DE MEMORIA-------------------------
 
-component reg2bits is 
+component registrador_2b is
 port(
     CLK, RST, enable: in std_logic;
     D: in std_logic_vector(1 downto 0);
@@ -53,7 +66,7 @@ port(
     );
 end component;
 
-component reg5bits is 
+component registrador_5b is
 port(
     CLK, RST, enable: in std_logic;
     D: in std_logic_vector(4 downto 0);
@@ -61,20 +74,12 @@ port(
     );
 end component;
 
-component reg5bits_points is 
-port (
-	CLK, RST, enable: in std_logic;
-	D: in std_logic_vector(5 downto 0);
-	Q: out std_logic_vector(5 downto 0)
-	);
-end component;
-
-component reg6bits_points is 
+component registrador_6b is
 port(
     CLK, RST, enable: in std_logic;
-	D: in std_logic_vector(5 downto 0);
-	Q: out std_logic_vector(5 downto 0)
-	);
+    D: in std_logic_vector(5 downto 0);
+    Q: out std_logic_vector(5 downto 0)
+);
 end component;
 
 component ROM0 is
@@ -98,46 +103,52 @@ component ROM3 is
 end component;
 
 ---------------------MULTIPLEXADORES----------------------------
-
-
-component mux2pra1_4bits is
+component mux_21_8b is
 port(
     sel: in std_logic;
-	x, y: in std_logic_vector(3 downto 0);
-	saida: out std_logic_vector(3 downto 0)
+    x, y: in std_logic_vector(7 downto 0);
+    saida: out std_logic_vector(7 downto 0)
     );
 end component;
 
-component mux2pra1_7bits is
+component mux_21_4b is
+port(
+    sel: in std_logic;
+    x, y: in std_logic_vector(3 downto 0);
+    saida: out std_logic_vector(3 downto 0)
+    );
+end component;
+
+component mux_21_7b is
 port (sel: in std_logic;
-		x, y: in std_logic_vector(6 downto 0);
-		saida: out std_logic_vector(6 downto 0)
+    x, y: in std_logic_vector(6 downto 0);
+    saida: out std_logic_vector(6 downto 0)
 );
 end component;
 
-component mux2pra1_5bits is
+component mux_21_6b is
 port (sel: in std_logic;
-		x, y: in std_logic_vector(4 downto 0);
-		saida: out std_logic_vector(4 downto 0)
+    x, y: in std_logic_vector(5 downto 0);
+    saida: out std_logic_vector(5 downto 0)
 );
 end component;
 
-component mux4pra1_5bits is	
-port (F1: in  std_logic_vector(4 downto 0);
- F2: in  std_logic_vector(4 downto 0);
- F3: in  std_logic_vector(4 downto 0);
- F4: in  std_logic_vector(4 downto 0);
- sel: in  std_logic_vector(1 downto 0);
- F: out  std_logic_vector(4 downto 0));
+component mux_41_5b is
+port (w: in  std_logic_vector(4 downto 0);
+    x: in  std_logic_vector(4 downto 0);
+    y: in  std_logic_vector(4 downto 0);
+    z: in  std_logic_vector(4 downto 0);
+    sel: in  std_logic_vector(1 downto 0);
+    saida: out  std_logic_vector(4 downto 0)
+);
 end component;
-
 
 ----------------------DECODIFICADOR-----------------------------
 
 component decod7seg is
 port(
-    X: in std_logic_vector(3 downto 0);
-    Y: out std_logic_vector(6 downto 0)
+    C: in std_logic_vector(3 downto 0);
+    F: out std_logic_vector(6 downto 0)
     );
 end component;
 
@@ -149,26 +160,26 @@ component decodtermo is
 end component;
 
 component decodBCD is port (
-	input  : in  std_logic_vector(3 downto 0);
-	output : out std_logic_vector(7 downto 0)
-	);
+    y: in std_logic_vector(3 downto 0);
+    z: out std_logic_vector(7 downto 0)
+);
 end component;
 
 -------------------COMPARADORES E SOMA--------------------------
 
 component subtracao is port(
-	A       : in  std_logic_vector(4 downto 0);
-   B       : in  std_logic_vector(4 downto 0);
-   resultado       : out std_logic_vector(4 downto 0);
-	flag: out std_logic
-    );
+    A: in std_logic_vector(4 downto 0);
+    B: in std_logic_vector(4 downto 0);
+    resultado: out std_logic_vector(4 downto 0);
+    flag: out std_logic
+);
 end component;
 
-component somador is port (
-    A: in  std_logic_vector(4 downto 0);
-    B: in  std_logic_vector(5 downto 0);
-    F: out  std_logic_vector(5 downto 0);
-	 flag: out std_logic);
+component soma is port (
+    A: in std_logic_vector(5 downto 0);
+    B: in std_logic_vector(5 downto 0);
+    F: out std_logic_vector(5 downto 0)
+);
 end component;
 
 component comp2 is
@@ -182,20 +193,107 @@ end component;
 --                      SIGNALS                               --
 --============================================================--
 
-signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5: std_logic; -- 1 bit
+signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5,neg_flag: std_logic; -- 1 bit
 signal SEL: std_logic_vector (1 downto 0); -- 2 bits
-signal final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_7_downto_4, time_BCD_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
-signal t5bits, COMP, time_FPGA, double_neg_COMP, neg_COMP, penalty, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out: std_logic_vector (4 downto 0); -- 5 bits
-signal points, points_reg: std_logic_vector(5 downto 0);
+signal SEL00,selfin4,saida_muxcima_azul,saida_muxbaixo_azul,final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
+signal t5bits,s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out,final,end_game_aux_extended,end_time_aux_extended: std_logic_vector (4 downto 0); -- 5 bits
+signal points, points_reg,double_neg_COMP, neg_COMP,penalty: std_logic_vector(5 downto 0);
 signal dec_hex6, dec_hex7: std_logic_vector (6 downto 0);
-signal time_BCD, FPGA_BCD: std_logic_vector (7 downto 0);
+signal time_BCD, FPGA_BCD,time_BCD_out: std_logic_vector (7 downto 0);
 
 begin
 
+SW17_and_E3<=SW(17) and E3;
+SW0orE5<= SW(0) or E5;
 
---DIV: Div_Freq port map (CLOCK_50, R2, clk_1); -- para uso na placa
+FPGA_BCD_7_downto_4<=FPGA_BCD(7 downto 4);
+FPGA_BCD_3_downto_0<=FPGA_BCD(3 downto 0);
+time_BCD_out_7_downto_4<=time_BCD_out(7 downto 4);
+time_BCD_out_3_downto_0<=time_BCD_out(3 downto 0);
+time_FPGA_3_downto_0<=time_FPGA(3 downto 0);
+SEL00<="00"& SEL;
+selfin4<='0'&SEl&final(4);
+t5bits<='0'&timer;
+
+--- Letras fixas ---
+
+HEX3<="0101111"; -- r
+HEX5<="1000111"; -- L
 
 -- a fazer pelo alun@
 
+double_neg_COMP<= COMP&'0';
+
+end_game_aux<=(neg_flag or points(5));
+end_game<=end_game_aux;
+end_time<=end_time_aux;
+end_game_aux_extended<=end_game_aux&end_game_aux&end_game_aux&end_game_aux&end_game_aux;
+end_time_aux_extended<=end_time_aux&end_time_aux&end_time_aux&end_time_aux&end_time_aux;
+final<= ((not(end_game_aux_extended))and (not (end_time_aux_extended))and (points_reg (4 downto 0)));
+
+--- Multiplexadores ---
+
+Muxcomp:mux_21_6b port map (COMP(4),neg_COMP,double_neg_COMP,penalty);
+MuxBCD: mux_21_8b port map (SW(0),"00000000",time_BCD,time_BCD_out);
+MuxROM: mux_41_5b port map (ROM0_out,ROM1_out, ROM2_out, ROM3_out,SEl,ROM_out);
+MuxHEX7:mux_21_7b port map (E6,"1111111",dec_hex7,HEX7);
+MuxHEX6:mux_21_7b port map (E6,"1111111",dec_hex6,HEX6);
+Muxcimaazul: mux_21_4b port map (SW0orE5,"0000",time_BCD_out_7_downto_4,saida_muxcima_azul);
+Muxbaixoazul: mux_21_4b port map (SW0orE5,"0000",time_BCD_out_3_downto_0,saida_muxbaixo_azul);
+Muxcimalaranja: mux_21_4b port map(E2,saida_muxcima_azul,FPGA_BCD_7_downto_4,mux_hex1);
+Muxbaixolaranja: mux_21_4b port map(E2,saida_muxbaixo_azul,FPGA_BCD_3_downto_0,mux_hex0);
+
+--- Registradores ---
+
+Reg_2bits: registrador_2b port map (CLK_1Hz,R1,E1,SW(1 downto 0),SEL); --NO EMULADOR
+Reg_5bits: registrador_5b port map (CLK_1Hz,R1,E2,ROM_out,time_FPGA); --NO EMULADOR
+Reg_6bits: registrador_6b port map (CLK_1Hz,R1,E4,points,points_reg); --NO EMULADOR
+
+--Reg_2bits: registrador_2b port map (CLOCK_50,R1,E1,SW(1 downto 0),SEL); --NA PLACA
+--Reg_5bits: registrador_5b port map (CLOCK_50,R1,E2,ROM_out,time_FPGA); --NA PLACA
+--Reg_6bits: registrador_6b port map (CLOCK_50,R1,E4,points,points_reg); --NA PLACA
+
+--- ROMs ---
+
+Rom0: ROM0 port map (round,ROM0_out);
+Rom1: ROM1 port map (round,ROM1_out);
+Rom2: ROM2 port map (round,ROM2_out);
+Rom3: ROM3 port map (round,ROM3_out);
+
+--- Somador ---
+
+Soma_Pontos: soma port map(penalty,points_reg,points);
+
+--- Subtrator ---
+
+Subtracao_Tempo: subtracao port map (time_FPGA,t5bits,COMP,neg_flag);
+
+--- Complemento de 2 ---
+
+Comp2_neg: comp2 port map (COMP, neg_COMP);  
+
+--- Contadores ---
+
+contador_rodada: contador port map (R1,CLK_1Hz,E4,round,end_round); --NO EMULADOR
+--contador_rodada: contador port map (R1,CLOCK_50,E4,round,end_round); --NA PLACA
+
+contador_tempo: contador port map (E2,clk_1,SW17_and_E3,timer,end_time_aux);
+
+--- Decodificadores ---
+
+decod_HEX0:decod7seg port map(mux_hex0, HEX0);
+decod_HEX1: decod7seg port map(mux_hex1, HEX1);
+decod_HEX2: decod7seg port map(round, HEX2);
+decod_HEX4:decod7seg port map(SEL00,HEX4);
+decod_HEX6:decod7seg port map(final (3 downto 0),dec_hex6 );
+decod_HEX7:decod7seg port map(selfin4,dec_hex7);
+decod_termo:decodtermo port map(points_reg(4 downto 0),LEDR);
+decod_BCD1: decodBCD port map (timer,time_BCD);
+decod_BCD2: decodBCD port map (time_FPGA_3_downto_0,FPGA_BCD);
+
+--- Divisores de Frequência ---
+
+Div_Freq: Div_Freq_emu port map (CLOCK_50, R1, clk_1, open); --NO EMULADOR
+--Div_Freq: Div_Freq port map (CLOCK_50, R1, clk_1); --NA PLACA
 
 end arc;
