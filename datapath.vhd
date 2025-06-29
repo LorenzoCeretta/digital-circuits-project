@@ -224,9 +224,9 @@ HEX3 <= "0101111"; -- r
 HEX5 <= "1000111"; -- L
 
 --- Lógica do jogo ---
-double_neg_COMP <= COMP & '0';
-neg_COMP <= (not('0' & COMP) + 1);
-end_game_aux <= (neg_flag or points(5));
+double_neg_COMP <= COMP & '0';  -- Penalidade 2x quando excede (COMP positivo)
+neg_COMP <= (not('0' & COMP) + 1);  -- Penalidade 1x quando falta (COMP negativo)
+end_game_aux <= (neg_flag or points(5));  -- Fim de jogo se pontos negativos
 end_game <= end_game_aux;
 end_time <= end_time_aux;
 
@@ -238,7 +238,7 @@ end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_a
 final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
-Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);
+Mux_penalty: mux_21_6b port map(neg_flag, double_neg_COMP, neg_COMP, penalty);
 Mux_debug: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
 Mux_rom: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
 Mux_hex7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
