@@ -193,13 +193,13 @@ end component;
 --                      SIGNALS                               --
 --============================================================--
 
-signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5,neg_flag: std_logic; -- 1 bit
+signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5, neg_flag: std_logic; -- 1 bit
 signal SEL: std_logic_vector (1 downto 0); -- 2 bits
-signal SEL00,selfin4,saida_muxcima_azul,saida_muxbaixo_azul,final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
-signal t5bits,s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out,final,end_game_aux_extended,end_time_aux_extended: std_logic_vector (4 downto 0); -- 5 bits
-signal points, points_reg,double_neg_COMP, neg_COMP,penalty: std_logic_vector(5 downto 0);
+signal SEL00, selfin4, saida_muxcima_azul, saida_muxbaixo_azul, final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
+signal t5bits, s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out, final, end_game_aux_extended, end_time_aux_extended: std_logic_vector (4 downto 0); -- 5 bits
+signal points, points_reg, double_neg_COMP, neg_COMP, penalty: std_logic_vector(5 downto 0); -- 6 bits para penalty e points
 signal dec_hex6, dec_hex7: std_logic_vector (6 downto 0);
-signal time_BCD, FPGA_BCD,time_BCD_out: std_logic_vector (7 downto 0);
+signal time_BCD, FPGA_BCD, time_BCD_out: std_logic_vector (7 downto 0);
 
 begin
 
@@ -212,7 +212,7 @@ time_BCD_out_7_downto_4<=time_BCD_out(7 downto 4);
 time_BCD_out_3_downto_0<=time_BCD_out(3 downto 0);
 time_FPGA_3_downto_0<=time_FPGA(3 downto 0);
 SEL00<="00"& SEL;
-selfin4<='0'&SEl&final(4);
+selfin4<='0'& SEL & final(4);
 t5bits<='0'&timer;
 
 --- Letras fixas ---
@@ -222,14 +222,20 @@ HEX5<="1000111"; -- L
 
 -- a fazer pelo alun@
 
-double_neg_COMP<= COMP&'0';
+--- Lógica do jogo ---
+double_neg_COMP <= COMP & '0';  
 
-end_game_aux<=(neg_flag or points(5));
-end_game<=end_game_aux;
-end_time<=end_time_aux;
-end_game_aux_extended<=end_game_aux&end_game_aux&end_game_aux&end_game_aux&end_game_aux;
-end_time_aux_extended<=end_time_aux&end_time_aux&end_time_aux&end_time_aux&end_time_aux;
-final<= ((not(end_game_aux_extended))and (not (end_time_aux_extended))and (points_reg (4 downto 0)));
+-- Fim de jogo
+end_game_aux <= (neg_flag or points(5));  -- overflow (negativo)
+end_game <= end_game_aux;
+end_time <= end_time_aux;
+
+-- Extensão dos sinais de controle para 5 bits
+end_game_aux_extended <= end_game_aux & end_game_aux & end_game_aux & end_game_aux & end_game_aux;
+end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_aux & end_time_aux;
+
+-- Cálculo do resultado final
+final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
 
@@ -270,14 +276,14 @@ Subtracao_Tempo: subtracao port map (time_FPGA,t5bits,COMP,neg_flag);
 
 --- Complemento de 2 ---
 
-Comp2_neg: comp2 port map (COMP, neg_COMP);  
+Comp2_neg: comp2 port map (COMP, neg_COMP); 
 
 --- Contadores ---
 
 contador_rodada: contador port map (R1,CLK_1Hz,E4,round,end_round); --NO EMULADOR
 --contador_rodada: contador port map (R1,CLOCK_50,E4,round,end_round); --NA PLACA
 
-contador_tempo: contador port map (E2,clk_1,SW17_and_E3,timer,end_time_aux);
+contador_tempo: contador port map (E2,CLK_1,SW17_and_E3,timer,end_time_aux);
 
 --- Decodificadores ---
 
@@ -293,7 +299,7 @@ decod_BCD2: decodBCD port map (time_FPGA_3_downto_0,FPGA_BCD);
 
 --- Divisores de Frequência ---
 
-Div_Freq: Div_Freq_emu port map (CLOCK_50, R1, clk_1, open); --NO EMULADOR
---Div_Freq: Div_Freq port map (CLOCK_50, R1, clk_1); --NA PLACA
+Div_Freq: Div_Freq_emu port map (CLOCK_50, R1, CLK_1, open); --NO EMULADOR
+--Div_Freq: Div_Freq port map (CLOCK_50, R1, CLK_1); --NA PLACA
 
 end arc;
