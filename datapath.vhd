@@ -186,7 +186,7 @@ end component;
 --                      SIGNALS                               --
 --============================================================--
 
-signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5, neg_flag, inv_neg_flag: std_logic; -- 1 bit
+signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, neg_flag, inv_neg_flag, show_timer, show_time_display: std_logic; -- 1 bit
 signal SEL: std_logic_vector (1 downto 0); -- 2 bits
 signal SEL00, selfin4, time_high_out, time_low_out, final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
 signal t5bits, s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out, final, end_game_aux_extended, end_time_aux_extended, points_termo: std_logic_vector (4 downto 0); -- 5 bits
@@ -205,7 +205,10 @@ begin
 
 -- Sinais de controle
 SW17_and_E3 <= SW(17) and E3;
-SW0orE5 <= SW(0) or E5;
+-- Lógica para mostrar timer: debug OU Next_Round OU (Waits E NÃO Play_User)
+show_timer <= SW(0) or E7 or (E5 and not E3);
+-- Lógica para habilitar display de tempo
+show_time_display <= SW(0) or E5 or E7;
 inv_neg_flag <= not neg_flag;  -- Inversão do neg_flag
 points_termo <= points_reg(4 downto 0);  -- Pega apenas os 5 bits menos significativos para o decodificador termométrico
 
@@ -238,12 +241,12 @@ final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (poi
 
 --- Multiplexadores ---
 Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);  -- Usando COMP(4) como seletor
-Mux_debug: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
+Mux_debug: mux_21_8b port map(show_timer, "00000000", time_BCD, time_BCD_out);
 Mux_rom: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
 Mux_hex7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
 Mux_hex6: mux_21_7b port map(E6, "1111111", dec_hex6, HEX6);
-Mux_time_high: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_7_downto_4, time_high_out);
-Mux_time_low: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_3_downto_0, time_low_out);
+Mux_time_high: mux_21_4b port map(show_time_display, "0000", time_BCD_out_7_downto_4, time_high_out);
+Mux_time_low: mux_21_4b port map(show_time_display, "0000", time_BCD_out_3_downto_0, time_low_out);
 Mux_display_high: mux_21_4b port map(E2, time_high_out, FPGA_BCD_7_downto_4, mux_hex1);
 Mux_display_low: mux_21_4b port map(E2, time_low_out, FPGA_BCD_3_downto_0, mux_hex0);
 
