@@ -182,20 +182,13 @@ component soma is port (
 );
 end component;
 
-component comp2 is
-    port (
-        A       : in  std_logic_vector(4 downto 0);
-        F       : out std_logic_vector(5 downto 0)
-    );
-end component;
-
 --============================================================--
 --                      SIGNALS                               --
 --============================================================--
 
 signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5, neg_flag: std_logic; -- 1 bit
 signal SEL: std_logic_vector (1 downto 0); -- 2 bits
-signal SEL00, selfin4, saida_muxcima_azul, saida_muxbaixo_azul, final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
+signal SEL00, selfin4, mux_time_high, mux_time_low, final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
 signal t5bits, s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out, final, end_game_aux_extended, end_time_aux_extended: std_logic_vector (4 downto 0); -- 5 bits
 signal points, points_reg, double_neg_COMP, neg_COMP, penalty: std_logic_vector(5 downto 0); -- 6 bits para penalty e points
 signal dec_hex6, dec_hex7: std_logic_vector (6 downto 0);
@@ -245,15 +238,15 @@ end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_a
 final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
-Muxcomp: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);
-MuxBCD: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
-MuxROM: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
-MuxHEX7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
-MuxHEX6: mux_21_7b port map(E6, "1111111", dec_hex6, HEX6);
-Muxcimaazul: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_7_downto_4, saida_muxcima_azul);
-Muxbaixoazul: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_3_downto_0, saida_muxbaixo_azul);
-Muxcimalaranja: mux_21_4b port map(E2, saida_muxcima_azul, FPGA_BCD_7_downto_4, mux_hex1);
-Muxbaixolaranja: mux_21_4b port map(E2, saida_muxbaixo_azul, FPGA_BCD_3_downto_0, mux_hex0);
+Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);
+Mux_debug: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
+Mux_rom: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
+Mux_hex7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
+Mux_hex6: mux_21_7b port map(E6, "1111111", dec_hex6, HEX6);
+Mux_time_high: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_7_downto_4, mux_time_high);
+Mux_time_low: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_3_downto_0, mux_time_low);
+Mux_display_high: mux_21_4b port map(E2, mux_time_high, FPGA_BCD_7_downto_4, mux_hex1);
+Mux_display_low: mux_21_4b port map(E2, mux_time_low, FPGA_BCD_3_downto_0, mux_hex0);
 
 --- Registradores ---
 Reg_5bits: registrador_5b port map(CLOCK_50, R1, E2, ROM_out, time_FPGA);
