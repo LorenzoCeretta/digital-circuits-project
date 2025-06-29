@@ -29,7 +29,8 @@ begin
             when "1100" => z <= "00010010"; -- 12
             when "1101" => z <= "00010011"; -- 13
             when "1110" => z <= "00010100"; -- 14
-            when "1111" => z <= "00010101"  -- 15
+            when "1111" => z <= "00010101";  -- 15
+            when others => z <= "00000000"; -- Para arrumar erro ao compilar
         end case;
     end process;
 end arch; 

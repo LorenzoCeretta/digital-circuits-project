@@ -31,8 +31,7 @@ LEDR: out std_logic_vector(17 downto 0)
 end component;
 
 component controle is
-port
-(
+port (
 BTN1, BTN0, clock_50: in std_logic;
 end_game, end_time, end_round: in std_logic;
 R1, E1, E2, E3, E4, E5, E6: out std_logic
@@ -40,11 +39,10 @@ R1, E1, E2, E3, E4, E5, E6: out std_logic
 end component;
 
 component ButtonSync is
-	port
-	(
-		KEY0, KEY1, CLK: in std_logic;
-		BTN0, BTN1: out std_logic
-	);
+port (
+KEY0, KEY1, CLK: in std_logic;
+BTN0, BTN1: out std_logic
+);
 end component;
 
 	signal R1, E1, E2, E3, E4, E5, E6: std_logic;   -- sinais de controle
@@ -105,4 +103,4 @@ PM_ButtonSync: ButtonSync port map(
 												BTN1 => btn1
 );
 
-end architecture;
+end arc;

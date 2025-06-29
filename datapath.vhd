@@ -148,7 +148,7 @@ end component;
 component decod7seg is
 port(
     C: in std_logic_vector(3 downto 0);
-    F: out std_logic_vector(6 downto 0)
+    saida: out std_logic_vector(6 downto 0)
     );
 end component;
 
@@ -185,7 +185,7 @@ end component;
 component comp2 is
     port (
         A       : in  std_logic_vector(4 downto 0);
-        F       : out std_logic_vector(4 downto 0)
+        F       : out std_logic_vector(5 downto 0)
     );
 end component;
 
@@ -261,10 +261,10 @@ Reg_6bits: registrador_6b port map (CLK_1Hz,R1,E4,points,points_reg); --NO EMULA
 
 --- ROMs ---
 
-Rom0: ROM0 port map (round,ROM0_out);
-Rom1: ROM1 port map (round,ROM1_out);
-Rom2: ROM2 port map (round,ROM2_out);
-Rom3: ROM3 port map (round,ROM3_out);
+rom_0: ROM0 port map (round,ROM0_out);
+rom_1: ROM1 port map (round,ROM1_out);
+rom_2: ROM2 port map (round,ROM2_out);
+rom_3: ROM3 port map (round,ROM3_out);
 
 --- Somador ---
 
@@ -290,9 +290,9 @@ contador_tempo: contador port map (E2,CLK_1,SW17_and_E3,timer,end_time_aux);
 decod_HEX0:decod7seg port map(mux_hex0, HEX0);
 decod_HEX1: decod7seg port map(mux_hex1, HEX1);
 decod_HEX2: decod7seg port map(round, HEX2);
-decod_HEX4:decod7seg port map(SEL00,HEX4);
-decod_HEX6:decod7seg port map(final (3 downto 0),dec_hex6 );
-decod_HEX7:decod7seg port map(selfin4,dec_hex7);
+decod_HEX4:decod7seg port map(SEL00, HEX4);
+decod_HEX6:decod7seg port map(final(3 downto 0), dec_hex6);
+decod_HEX7:decod7seg port map(selfin4, dec_hex7);
 decod_termo:decodtermo port map(points_reg(4 downto 0),LEDR);
 decod_BCD1: decodBCD port map (timer,time_BCD);
 decod_BCD2: decodBCD port map (time_FPGA_3_downto_0,FPGA_BCD);
