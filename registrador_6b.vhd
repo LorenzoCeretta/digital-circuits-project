@@ -14,7 +14,7 @@ begin
     process(CLK, RST)
     begin
         if RST = '1' then
-            Q <= "000000";
+            Q <= "010010";  -- Inicializa com 18 (decimal) quando R1=1
         elsif CLK'event and CLK = '1' then
             if enable = '1' then
                 Q <= D;

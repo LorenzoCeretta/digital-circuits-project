@@ -23,7 +23,7 @@ port (
 SW: in std_logic_vector(17 downto 0);
 --CLOCK_50: in std_logic; -- usar na placa
 CLOCK_50, CLK_1Hz: in std_logic; -- usar no emulador
-R1, E1, E2, E3, E4, E5, E6: in std_logic;
+R1, E1, E2, E3, E4, E5, E6, E7: in std_logic;
 end_game, end_time, end_round: out std_logic;
 HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, HEX6, HEX7: out std_logic_vector(6 downto 0);
 LEDR: out std_logic_vector(17 downto 0)
@@ -34,7 +34,7 @@ component controle is
 port (
 BTN1, BTN0, clock_50: in std_logic;
 end_game, end_time, end_round: in std_logic;
-R1, E1, E2, E3, E4, E5, E6: out std_logic
+R1, E1, E2, E3, E4, E5, E6, E7: out std_logic
 );
 end component;
 
@@ -45,7 +45,7 @@ BTN0, BTN1: out std_logic
 );
 end component;
 
-	signal R1, E1, E2, E3, E4, E5, E6: std_logic;   -- sinais de controle
+	signal R1, E1, E2, E3, E4, E5, E6, E7: std_logic;   -- sinais de controle
 	signal end_game, end_time, end_round: std_logic;   -- sinais de status
 	signal btn0, btn1: std_logic;   -- botões sincronizados
 
@@ -62,7 +62,8 @@ PM_datapath: datapath port map(
 											E3 => E3,
 											E4 => E4,
 											E5 => E5,
-                      E6 => E6,
+											E6 => E6,
+											E7 => E7,
 											end_game => end_game,
 											end_time => end_time,
 											end_round => end_round,
@@ -91,7 +92,8 @@ PM_controle: controle port map(
 											E3 => E3,
 											E4 => E4,
 											E5 => E5,
-                      E6 => E6
+											E6 => E6,
+											E7 => E7
 );
 
 PM_ButtonSync: ButtonSync port map(

@@ -13,7 +13,7 @@ SW: in std_logic_vector(17 downto 0);
 CLOCK_50, CLK_1Hz: in std_logic; --NO EMULADOR
 
 -- Sinais de controle
-R1, E1, E2, E3, E4, E5, E6: in std_logic;
+R1, E1, E2, E3, E4, E5, E6, E7: in std_logic;
 
 -- Sinais de status
 end_game, end_time, end_round: out std_logic;
@@ -186,10 +186,10 @@ end component;
 --                      SIGNALS                               --
 --============================================================--
 
-signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5, neg_flag: std_logic; -- 1 bit
+signal COMP_msb, CLK_1, SW17_and_E3, end_game_aux_or_end_time_aux, end_game_aux, end_time_aux, COMP_5, flag1, flag2, SW0orE5, neg_flag, inv_neg_flag: std_logic; -- 1 bit
 signal SEL: std_logic_vector (1 downto 0); -- 2 bits
 signal SEL00, selfin4, time_high_out, time_low_out, final_point_msb, final_point_lsb, round, timer, time_fpga_3_downto_0, FPGA_BCD_7_downto_4, FPGA_BCD_3_downto_0, time_BCD_out_7_downto_4, time_BCD_out_3_downto_0, mux_hex0, mux_hex1, end_game_aux_or_end_time_aux_extended, mux_hex0aux, mux_hex1aux: std_logic_vector (3 downto 0); -- 4 bits
-signal t5bits, s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out, final, end_game_aux_extended, end_time_aux_extended: std_logic_vector (4 downto 0); -- 5 bits
+signal t5bits, s, COMP, time_FPGA, ROM_out, ROM0_out, ROM1_out, ROM2_out, ROM3_out, final, end_game_aux_extended, end_time_aux_extended, points_termo: std_logic_vector (4 downto 0); -- 5 bits
 signal points, points_reg, double_neg_COMP, neg_COMP, penalty: std_logic_vector(5 downto 0); -- 6 bits para penalty e points
 signal dec_hex6, dec_hex7: std_logic_vector (6 downto 0);
 signal time_BCD, FPGA_BCD, time_BCD_out: std_logic_vector (7 downto 0);
@@ -206,9 +206,8 @@ begin
 -- Sinais de controle
 SW17_and_E3 <= SW(17) and E3;
 SW0orE5 <= SW(0) or E5;
-
--- Registrador para armazenar o nível
-Reg_2bits: registrador_2b port map(CLOCK_50, R1, E1, SW(1 downto 0), SEL);
+inv_neg_flag <= not neg_flag;  -- Inversão do neg_flag
+points_termo <= points_reg(4 downto 0);  -- Pega apenas os 5 bits menos significativos para o decodificador termométrico
 
 FPGA_BCD_7_downto_4 <= FPGA_BCD(7 downto 4);
 FPGA_BCD_3_downto_0 <= FPGA_BCD(3 downto 0);
@@ -226,7 +225,7 @@ HEX5 <= "1000111"; -- L
 --- Lógica do jogo ---
 double_neg_COMP <= COMP & '0';  -- Penalidade 2x quando excede (COMP positivo)
 neg_COMP <= (not('0' & COMP) + 1);  -- Penalidade 1x quando falta (COMP negativo)
-end_game_aux <= (neg_flag or points(5));  -- Fim de jogo se pontos negativos
+end_game_aux <= (neg_flag or points(5));  -- Fim de jogo se pontos negativos OU subtração deu negativo
 end_game <= end_game_aux;
 end_time <= end_time_aux;
 
@@ -238,7 +237,7 @@ end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_a
 final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
-Mux_penalty: mux_21_6b port map(neg_flag, double_neg_COMP, neg_COMP, penalty);
+Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);  -- Usando COMP(4) como seletor
 Mux_debug: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
 Mux_rom: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
 Mux_hex7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
@@ -251,6 +250,7 @@ Mux_display_low: mux_21_4b port map(E2, time_low_out, FPGA_BCD_3_downto_0, mux_h
 --- Registradores ---
 Reg_5bits: registrador_5b port map(CLOCK_50, R1, E2, ROM_out, time_FPGA);
 Reg_6bits: registrador_6b port map(CLOCK_50, R1, E4, points, points_reg);
+Reg_2bits: registrador_2b port map(CLOCK_50, R1, E1, SW(1 downto 0), SEL);
 
 --- ROMs ---
 ROM0_comp: ROM0 port map(round, ROM0_out);
@@ -265,7 +265,7 @@ soma_points: soma port map(penalty, points_reg, points);
 sub: subtracao port map(time_FPGA, t5bits, COMP, neg_flag);
 
 --- Contadores ---
-Counter_round: contador port map(R1, CLOCK_50, E4, round, end_round);
+Counter_round: contador port map(R1, CLOCK_50, E7, round, end_round);
 Counter_time: contador port map(E2, CLK_1Hz, SW17_and_E3, timer, end_time_aux);
 
 --- Decodificadores ---
@@ -275,7 +275,7 @@ decod_HEX2: decod7seg port map(round, HEX2);
 decod_HEX4: decod7seg port map(SEL00, HEX4);
 decod_HEX6: decod7seg port map(final(3 downto 0), dec_hex6);
 decod_HEX7: decod7seg port map(selfin4, dec_hex7);
-decod_termo: decodtermo port map(points_reg(4 downto 0), LEDR);
+decod_termo: decodtermo port map(points_termo, LEDR);  -- Usando o sinal intermediário
 decod_BCD1: decodBCD port map(timer, time_BCD);
 decod_BCD2: decodBCD port map(time_fpga_3_downto_0, FPGA_BCD);
 
