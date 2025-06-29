@@ -20,6 +20,7 @@ saida <= "1000000" when C = "0000" else
 "0001000" when C = "1010" else
 "0000011" when C = "1011" else
 "1000110" when C = "1100" else
-"0100001" when C = "1101" else        
-"0000110";
+"0100001" when C = "1101" else
+"0001110" when C = "1110" else
+"0001110" when C = "1111"; 
 end decod;
