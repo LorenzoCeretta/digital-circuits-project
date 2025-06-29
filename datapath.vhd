@@ -199,18 +199,16 @@ signal nivel: std_logic_vector(3 downto 0);
 signal dec_hex4: std_logic_vector(6 downto 0);
 
 -- Sinais de controle
-signal nivel_reg: std_logic_vector(1 downto 0); -- Registrador para o nível
+signal nivel_reg: std_logic_vector(1 downto 0); 
 
 begin
 
 -- Sinais de controle
 SW17_and_E3 <= SW(17) and E3;
--- Lógica para mostrar timer: debug OU Next_Round OU (Waits E NÃO Play_User)
 show_timer <= SW(0) or E7 or (E5 and not E3);
--- Lógica para habilitar display de tempo
 show_time_display <= SW(0) or E5 or E7;
-inv_neg_flag <= not neg_flag;  -- Inversão do neg_flag
-points_termo <= points_reg(4 downto 0);  -- Pega apenas os 5 bits menos significativos para o decodificador termométrico
+inv_neg_flag <= not neg_flag;  
+points_termo <= points_reg(4 downto 0); 
 
 FPGA_BCD_7_downto_4 <= FPGA_BCD(7 downto 4);
 FPGA_BCD_3_downto_0 <= FPGA_BCD(3 downto 0);
@@ -226,9 +224,9 @@ HEX3 <= "0101111"; -- r
 HEX5 <= "1000111"; -- L
 
 --- Lógica do jogo ---
-double_neg_COMP <= COMP & '0';  -- Penalidade 2x quando excede (COMP positivo)
-neg_COMP <= (not('0' & COMP) + 1);  -- Penalidade 1x quando falta (COMP negativo)
-end_game_aux <= (neg_flag or points(5));  -- Fim de jogo se pontos negativos OU subtração deu negativo
+double_neg_COMP <= COMP & '0';  -- Penalidade 2x quando excede 
+neg_COMP <= (not('0' & COMP) + 1);  -- Penalidade 1x quando falta
+end_game_aux <= (neg_flag or points(5));  -- Fim de jogo se pontos negativos
 end_game <= end_game_aux;
 end_time <= end_time_aux;
 
@@ -240,7 +238,7 @@ end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_a
 final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
-Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);  -- Usando COMP(4) como seletor
+Mux_penalty: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty); 
 Mux_debug: mux_21_8b port map(show_timer, "00000000", time_BCD, time_BCD_out);
 Mux_rom: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
 Mux_hex7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
@@ -278,7 +276,7 @@ decod_HEX2: decod7seg port map(round, HEX2);
 decod_HEX4: decod7seg port map(SEL00, HEX4);
 decod_HEX6: decod7seg port map(final(3 downto 0), dec_hex6);
 decod_HEX7: decod7seg port map(selfin4, dec_hex7);
-decod_termo: decodtermo port map(points_termo, LEDR);  -- Usando o sinal intermediário
+decod_termo: decodtermo port map(points_termo, LEDR); 
 decod_BCD1: decodBCD port map(timer, time_BCD);
 decod_BCD2: decodBCD port map(time_fpga_3_downto_0, FPGA_BCD);
 
