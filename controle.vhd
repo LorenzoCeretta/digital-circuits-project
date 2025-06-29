@@ -34,13 +34,17 @@ begin
 		when Start =>
 			-- Estado inicial - Reset do sistema
 			R1 <= '1'; E1 <= '0'; E2 <= '0'; E3 <= '0'; E4 <= '0'; E5 <= '0'; E6 <= '0';
-			PE <= Setup;
+			if BTN0 = '1' then
+				PE <= Setup;
+			else
+				PE <= Start;
+			end if;
 			
 		when Setup =>
 			-- Estado de configuração - usuário escolhe nível (SW1..0)
 			-- Mostra 'L' no HEX5 e nível no HEX4
 			R1 <= '0'; E1 <= '1'; E2 <= '0'; E3 <= '0'; E4 <= '0'; E5 <= '0'; E6 <= '0';
-			if BTN1 = '1' then  -- Enter pressionado
+			if BTN1 = '0' then  -- Enter pressionado (ativo baixo)
 				PE <= Play_FPGA;
 			else
 				PE <= Setup;
@@ -49,7 +53,7 @@ begin
 		when Play_FPGA =>
 			-- Mostra tempo da FPGA em BCD nos displays HEX1/HEX0
 			R1 <= '0'; E1 <= '0'; E2 <= '1'; E3 <= '0'; E4 <= '0'; E5 <= '0'; E6 <= '0';
-			if BTN1 = '1' then  -- Enter pressionado
+			if BTN1 = '0' then  -- Enter pressionado (ativo baixo)
 				PE <= Play_User;
 			else
 				PE <= Play_FPGA;
@@ -59,7 +63,7 @@ begin
 			-- Usuário estima o tempo - contador ativo quando SW(17)=1
 			-- Timeout de 15 segundos
 			R1 <= '0'; E1 <= '0'; E2 <= '0'; E3 <= '1'; E4 <= '0'; E5 <= '1'; E6 <= '0';
-			if BTN1 = '1' then  -- Enter pressionado antes do timeout
+			if BTN1 = '0' then  -- Enter pressionado antes do timeout (ativo baixo)
 				PE <= Next_Round;
 			elsif end_time = '1' then  -- Timeout de 15 segundos
 				PE <= Result;
@@ -88,7 +92,7 @@ begin
 			-- Mostra estimação do usuário
 			-- Aguarda enter para próxima rodada
 			R1 <= '0'; E1 <= '0'; E2 <= '0'; E3 <= '0'; E4 <= '0'; E5 <= '0'; E6 <= '0';
-			if BTN1 = '1' then  -- Enter pressionado
+			if BTN1 = '0' then  -- Enter pressionado (ativo baixo)
 				PE <= Play_FPGA;
 			else
 				PE <= Waits;
@@ -96,9 +100,8 @@ begin
 			
 		when Result =>
 			-- Mostra resultado final nos displays HEX7/HEX6
-			-- Fórmula: 32 × L + (end_time ∧ end_game ∧ P)
 			R1 <= '0'; E1 <= '0'; E2 <= '0'; E3 <= '0'; E4 <= '0'; E5 <= '0'; E6 <= '1';
-			if BTN1 = '1' then  -- Enter pressionado para reiniciar
+			if BTN1 = '0' then  -- Enter pressionado para reiniciar (ativo baixo)
 				PE <= Start;
 			else
 				PE <= Result;

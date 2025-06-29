@@ -201,32 +201,39 @@ signal points, points_reg, double_neg_COMP, neg_COMP, penalty: std_logic_vector(
 signal dec_hex6, dec_hex7: std_logic_vector (6 downto 0);
 signal time_BCD, FPGA_BCD, time_BCD_out: std_logic_vector (7 downto 0);
 
+-- Decodificação do nível (HEX4)
+signal nivel: std_logic_vector(3 downto 0);
+signal dec_hex4: std_logic_vector(6 downto 0);
+
+-- Sinais de controle
+signal nivel_reg: std_logic_vector(1 downto 0); -- Registrador para o nível
+
 begin
 
-SW17_and_E3<=SW(17) and E3;
-SW0orE5<= SW(0) or E5;
+-- Sinais de controle
+SW17_and_E3 <= SW(17) and E3;
+SW0orE5 <= SW(0) or E5;
 
-FPGA_BCD_7_downto_4<=FPGA_BCD(7 downto 4);
-FPGA_BCD_3_downto_0<=FPGA_BCD(3 downto 0);
-time_BCD_out_7_downto_4<=time_BCD_out(7 downto 4);
-time_BCD_out_3_downto_0<=time_BCD_out(3 downto 0);
-time_FPGA_3_downto_0<=time_FPGA(3 downto 0);
-SEL00<="00"& SEL;
-selfin4<='0'& SEL & final(4);
-t5bits<='0'&timer;
+-- Registrador para armazenar o nível
+Reg_2bits: registrador_2b port map(CLOCK_50, R1, E1, SW(1 downto 0), SEL);
+
+FPGA_BCD_7_downto_4 <= FPGA_BCD(7 downto 4);
+FPGA_BCD_3_downto_0 <= FPGA_BCD(3 downto 0);
+time_BCD_out_7_downto_4 <= time_BCD_out(7 downto 4);
+time_BCD_out_3_downto_0 <= time_BCD_out(3 downto 0);
+time_FPGA_3_downto_0 <= time_FPGA(3 downto 0);
+SEL00 <= "00" & SEL;
+selfin4 <= '0' & SEL & final(4);
+t5bits <= '0' & timer;
 
 --- Letras fixas ---
-
-HEX3<="0101111"; -- r
-HEX5<="1000111"; -- L
-
--- a fazer pelo alun@
+HEX3 <= "0101111"; -- r
+HEX5 <= "1000111"; -- L
 
 --- Lógica do jogo ---
-double_neg_COMP <= COMP & '0';  
-
--- Fim de jogo
-end_game_aux <= (neg_flag or points(5));  -- overflow (negativo)
+double_neg_COMP <= COMP & '0';
+neg_COMP <= (not('0' & COMP) + 1);
+end_game_aux <= (neg_flag or points(5));
 end_game <= end_game_aux;
 end_time <= end_time_aux;
 
@@ -238,68 +245,49 @@ end_time_aux_extended <= end_time_aux & end_time_aux & end_time_aux & end_time_a
 final <= ((not(end_game_aux_extended)) and (not(end_time_aux_extended)) and (points_reg(4 downto 0)));
 
 --- Multiplexadores ---
-
-Muxcomp:mux_21_6b port map (COMP(4),neg_COMP,double_neg_COMP,penalty);
-MuxBCD: mux_21_8b port map (SW(0),"00000000",time_BCD,time_BCD_out);
-MuxROM: mux_41_5b port map (ROM0_out,ROM1_out, ROM2_out, ROM3_out,SEl,ROM_out);
-MuxHEX7:mux_21_7b port map (E6,"1111111",dec_hex7,HEX7);
-MuxHEX6:mux_21_7b port map (E6,"1111111",dec_hex6,HEX6);
-Muxcimaazul: mux_21_4b port map (SW0orE5,"0000",time_BCD_out_7_downto_4,saida_muxcima_azul);
-Muxbaixoazul: mux_21_4b port map (SW0orE5,"0000",time_BCD_out_3_downto_0,saida_muxbaixo_azul);
-Muxcimalaranja: mux_21_4b port map(E2,saida_muxcima_azul,FPGA_BCD_7_downto_4,mux_hex1);
-Muxbaixolaranja: mux_21_4b port map(E2,saida_muxbaixo_azul,FPGA_BCD_3_downto_0,mux_hex0);
+Muxcomp: mux_21_6b port map(COMP(4), neg_COMP, double_neg_COMP, penalty);
+MuxBCD: mux_21_8b port map(SW(0), "00000000", time_BCD, time_BCD_out);
+MuxROM: mux_41_5b port map(ROM0_out, ROM1_out, ROM2_out, ROM3_out, SEL, ROM_out);
+MuxHEX7: mux_21_7b port map(E6, "1111111", dec_hex7, HEX7);
+MuxHEX6: mux_21_7b port map(E6, "1111111", dec_hex6, HEX6);
+Muxcimaazul: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_7_downto_4, saida_muxcima_azul);
+Muxbaixoazul: mux_21_4b port map(SW0orE5, "0000", time_BCD_out_3_downto_0, saida_muxbaixo_azul);
+Muxcimalaranja: mux_21_4b port map(E2, saida_muxcima_azul, FPGA_BCD_7_downto_4, mux_hex1);
+Muxbaixolaranja: mux_21_4b port map(E2, saida_muxbaixo_azul, FPGA_BCD_3_downto_0, mux_hex0);
 
 --- Registradores ---
-
-Reg_2bits: registrador_2b port map (CLK_1Hz,R1,E1,SW(1 downto 0),SEL); --NO EMULADOR
-Reg_5bits: registrador_5b port map (CLK_1Hz,R1,E2,ROM_out,time_FPGA); --NO EMULADOR
-Reg_6bits: registrador_6b port map (CLK_1Hz,R1,E4,points,points_reg); --NO EMULADOR
-
---Reg_2bits: registrador_2b port map (CLOCK_50,R1,E1,SW(1 downto 0),SEL); --NA PLACA
---Reg_5bits: registrador_5b port map (CLOCK_50,R1,E2,ROM_out,time_FPGA); --NA PLACA
---Reg_6bits: registrador_6b port map (CLOCK_50,R1,E4,points,points_reg); --NA PLACA
+Reg_5bits: registrador_5b port map(CLOCK_50, R1, E2, ROM_out, time_FPGA);
+Reg_6bits: registrador_6b port map(CLOCK_50, R1, E4, points, points_reg);
 
 --- ROMs ---
-
-rom_0: ROM0 port map (round,ROM0_out);
-rom_1: ROM1 port map (round,ROM1_out);
-rom_2: ROM2 port map (round,ROM2_out);
-rom_3: ROM3 port map (round,ROM3_out);
+ROM0_comp: ROM0 port map(round, ROM0_out);
+ROM1_comp: ROM1 port map(round, ROM1_out);
+ROM2_comp: ROM2 port map(round, ROM2_out);
+ROM3_comp: ROM3 port map(round, ROM3_out);
 
 --- Somador ---
-
-Soma_Pontos: soma port map(penalty,points_reg,points);
+soma_points: soma port map(penalty, points_reg, points);
 
 --- Subtrator ---
-
-Subtracao_Tempo: subtracao port map (time_FPGA,t5bits,COMP,neg_flag);
-
---- Complemento de 2 ---
-
-Comp2_neg: comp2 port map (COMP, neg_COMP); 
+sub: subtracao port map(time_FPGA, t5bits, COMP, neg_flag);
 
 --- Contadores ---
-
-contador_rodada: contador port map (R1,CLK_1Hz,E4,round,end_round); --NO EMULADOR
---contador_rodada: contador port map (R1,CLOCK_50,E4,round,end_round); --NA PLACA
-
-contador_tempo: contador port map (E2,CLK_1,SW17_and_E3,timer,end_time_aux);
+Counter_round: contador port map(R1, CLOCK_50, E4, round, end_round);
+Counter_time: contador port map(E2, CLK_1Hz, SW17_and_E3, timer, end_time_aux);
 
 --- Decodificadores ---
-
-decod_HEX0:decod7seg port map(mux_hex0, HEX0);
+decod_HEX0: decod7seg port map(mux_hex0, HEX0);
 decod_HEX1: decod7seg port map(mux_hex1, HEX1);
 decod_HEX2: decod7seg port map(round, HEX2);
-decod_HEX4:decod7seg port map(SEL00, HEX4);
-decod_HEX6:decod7seg port map(final(3 downto 0), dec_hex6);
-decod_HEX7:decod7seg port map(selfin4, dec_hex7);
-decod_termo:decodtermo port map(points_reg(4 downto 0),LEDR);
-decod_BCD1: decodBCD port map (timer,time_BCD);
-decod_BCD2: decodBCD port map (time_FPGA_3_downto_0,FPGA_BCD);
+decod_HEX4: decod7seg port map(SEL00, HEX4);
+decod_HEX6: decod7seg port map(final(3 downto 0), dec_hex6);
+decod_HEX7: decod7seg port map(selfin4, dec_hex7);
+decod_termo: decodtermo port map(points_reg(4 downto 0), LEDR);
+decod_BCD1: decodBCD port map(timer, time_BCD);
+decod_BCD2: decodBCD port map(time_FPGA_3_downto_0, FPGA_BCD);
 
 --- Divisores de Frequência ---
-
-Div_Freq: Div_Freq_emu port map (CLOCK_50, R1, CLK_1, open); --NO EMULADOR
---Div_Freq: Div_Freq port map (CLOCK_50, R1, CLK_1); --NA PLACA
+Div_Freq: Div_Freq_emu port map(CLOCK_50, R1, CLK_1, open); -- NO EMULADOR
+--Div_Freq: Div_Freq port map(CLOCK_50, R1, CLK_1); -- NA PLACA
 
 end arc;
